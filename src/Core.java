@@ -6,7 +6,7 @@ public class Core extends PApplet {
     }
 
     public void settings() {
-        size(600,600);
+        size(600, 600);
     }
 
     public void setup() {
@@ -15,5 +15,6 @@ public class Core extends PApplet {
 
     public void draw() {
         surface.setTitle("A-Maze-Ing, FPS: " + round(frameRate));
+        rect(mouseX,mouseY,40,40);
     }
 }
