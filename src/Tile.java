@@ -5,18 +5,18 @@ import java.util.Collections;
 
 public class Tile {
 
-    Core core;
+    private Core core;
 
     public static final int WIDTH = 30;
 
     private int x;
     private int y;
 
-    public int color = 255;
+    private int color = 255;
 
     boolean isWall;
 
-    public Tile(Core core, int x, int y, boolean isWall) {
+    Tile(Core core, int x, int y, boolean isWall) {
         this.core = core;
         this.x = x;
         this.y = y;
@@ -25,7 +25,7 @@ public class Tile {
 
     public void draw() {
         if (isWall) core.fill(0);
-        //farbe feld
+            //farbe feld
         else core.fill(color);
         core.rect(x * WIDTH, y * WIDTH, WIDTH, WIDTH);
         //farbe schrift
@@ -42,10 +42,10 @@ public class Tile {
 
     public ArrayList<Tile> getNeighbours() {
         ArrayList<Tile> tiles = new ArrayList<>();
-        tiles.add(core.getTile(x - 1, y));
-        tiles.add(core.getTile(x + 1, y));
-        tiles.add(core.getTile(x, y + 1));
-        tiles.add(core.getTile(x, y - 1));
+        tiles.add(core.getTile(x - 2, y));
+        tiles.add(core.getTile(x + 2, y));
+        tiles.add(core.getTile(x, y + 2));
+        tiles.add(core.getTile(x, y - 2));
         tiles.removeAll(Collections.singleton(null));
         return tiles;
     }
@@ -54,4 +54,15 @@ public class Tile {
         this.color = color;
     }
 
+    public void setWall(boolean isWall) {
+        this.isWall = isWall;
+    }
+
+    public int getX() {
+        return x;
+    }
+
+    public int getY() {
+        return y;
+    }
 }

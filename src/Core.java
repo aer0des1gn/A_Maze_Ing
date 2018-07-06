@@ -8,8 +8,8 @@ public class Core extends PApplet {
     public static boolean DEBUG = true;
 
     private ArrayList<Tile> tiles;
-    int tilesX = 40;
-    int tilesY = 30;
+    private static int tilesX = 40;
+    private static int tilesY = 30;
 
     public static void main(String[] args) {
         PApplet.main("Core", args);
@@ -24,7 +24,7 @@ public class Core extends PApplet {
         tiles = new ArrayList<>();
         for (int x = 0; x < tilesX; x++) {
             for (int y = 0; y < tilesY; y++) {
-                tiles.add(new Tile(this, x, y, false));
+                tiles.add(new Tile(this, x, y, true));
             }
         }
     }
@@ -41,9 +41,13 @@ public class Core extends PApplet {
     }
 
     public Tile getTile(int x, int y) {
-        if (x > 0 || y > 0 || x < tilesX - 1 || y < tilesY - 1)
-            return tiles.get(y + tilesY * x);
-        else return null;
+        if (x < 0 || y < 0 || x > tilesX - 1 || y > tilesY - 1)
+            return null;
+        else return tiles.get(y + tilesY * x);
+    }
+
+    private Tile getRandomTile() {
+        return getTile(floor(random(0, tilesX)), floor(random(0, tilesY)));
     }
 
     public void keyPressed() {
@@ -57,16 +61,26 @@ public class Core extends PApplet {
 
     public void mouseClicked() {
         Tile clickedOn = getTile(floor(mouseX / Tile.WIDTH), floor(mouseY / Tile.WIDTH));
-        System.out.println(clickedOn.toString());
         if (mouseButton == RIGHT) {
             for (Tile t : clickedOn.getNeighbours()) {
-                t.setColor(color(255,0,0));
+                t.setColor(color(255, 0, 0));
                 //System.out.println(t.toString());
             }
         }
     }
 
-    public void generateMaze() {
+    private void generateMaze() {
 
+        ArrayList<Tile> unvisitedTiles = new ArrayList<>(tiles);
+
+        //Pick a cell, mark it as part of the maze. Add the walls of the cell to the wall list.
+        while (!unvisitedTiles.isEmpty()) {
+            Tile startTile = unvisitedTiles.get((floor(random(0, unvisitedTiles.size() - 1))));
+            while (startTile != null) {
+                unvisitedTiles.remove(startTile);
+                startTile.setWall(false);
+                startTile = startTile.getNeighbours().stream().filter(unvisitedTiles::contains).findAny().orElse(null);
+            }
+        }
     }
 }
