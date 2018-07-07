@@ -7,32 +7,42 @@ public class Tile {
 
     private Core core;
 
-    public static final int WIDTH = 30;
-
     private int x;
     private int y;
 
-    private int color = 255;
+    private Wall east;
+    private Wall south;
+    private boolean visited;
+    private boolean inMaze;
 
-    boolean isWall;
-
-    Tile(Core core, int x, int y, boolean isWall) {
+    Tile(Core core, int x, int y) {
         this.core = core;
         this.x = x;
         this.y = y;
-        this.isWall = isWall;
+
+        inMaze = false;
+        visited = false;
     }
 
     public void draw() {
-        if (isWall) core.fill(0);
-            //farbe feld
-        else core.fill(color);
-        core.rect(x * WIDTH, y * WIDTH, WIDTH, WIDTH);
+
+        core.stroke(0);
+        if (getEast().isExisting())
+            core.line((x + 1) * core.WIDTH, y * core.WIDTH, (x + 1) * core.WIDTH, (y - 1) * core.WIDTH);
+        if (getSouth().isExisting())
+            core.line(x * core.WIDTH, (y - 1) * core.WIDTH, (x + 1) * core.WIDTH, (y - 1) * core.WIDTH);
+
+        if (inMaze) {
+            core.noStroke();
+            if (visited) core.fill(255);
+            else core.fill(255, 0, 0);
+            core.rect(x * core.WIDTH, y * core.WIDTH, core.WIDTH, core.WIDTH);
+        }
+
         //farbe schrift
-        core.fill(0);
         if (Core.DEBUG) {
             core.textAlign(PConstants.LEFT, PConstants.TOP);
-            core.text(toString(), x * WIDTH, y * WIDTH);
+            core.text(toString(), x * core.WIDTH, y * core.WIDTH);
         }
     }
 
@@ -42,20 +52,42 @@ public class Tile {
 
     public ArrayList<Tile> getNeighbours() {
         ArrayList<Tile> tiles = new ArrayList<>();
-        tiles.add(core.getTile(x - 2, y));
-        tiles.add(core.getTile(x + 2, y));
-        tiles.add(core.getTile(x, y + 2));
-        tiles.add(core.getTile(x, y - 2));
+        tiles.add(core.getTile(x - 1, y));
+        tiles.add(core.getTile(x + 1, y));
+        tiles.add(core.getTile(x, y + 1));
+        tiles.add(core.getTile(x, y - 1));
         tiles.removeAll(Collections.singleton(null));
         return tiles;
     }
 
-    public void setColor(int color) {
-        this.color = color;
+    public Wall getEast() {
+        return east == null ? (east = new Wall(this, core.getTile(x + 1, y))) : east;
     }
 
-    public void setWall(boolean isWall) {
-        this.isWall = isWall;
+    public Wall getSouth() {
+        return south == null ? (south = new Wall(this, core.getTile(x, y + 1))) : south;
+    }
+
+    public Wall getWest() {
+        Tile tile = core.getTile(x - 1, y);
+        if (tile != null)
+            return tile.getEast();
+        return null;
+    }
+
+    public Wall getNorth() {
+        Tile tile = core.getTile(x, y - 1);
+        if (tile != null)
+            return tile.getSouth();
+        return null;
+    }
+
+    public void setVisited() {
+        this.visited = true;
+    }
+
+    public boolean isUnvisited() {
+        return !visited;
     }
 
     public int getX() {
@@ -65,4 +97,9 @@ public class Tile {
     public int getY() {
         return y;
     }
+
+    public void setInMaze(boolean inMaze) {
+        this.inMaze = inMaze;
+    }
 }
+

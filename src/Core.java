@@ -1,40 +1,39 @@
 import processing.core.PApplet;
-import processing.core.PConstants;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class Core extends PApplet {
 
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
     private ArrayList<Tile> tiles;
-    private static int tilesX = 40;
-    private static int tilesY = 30;
+    private int tilesX = 10;
+    private int tilesY = 11;
+    public int WIDTH;
 
     public static void main(String[] args) {
         PApplet.main("Core", args);
     }
 
     public void settings() {
-        size(tilesX * Tile.WIDTH, tilesY * Tile.WIDTH);
+        size(601, 601);
+        WIDTH = width / tilesX;
+        System.out.println(WIDTH);
     }
 
     public void setup() {
-        frameRate(30);
+        frameRate(20);
         tiles = new ArrayList<>();
-        for (int x = 0; x < tilesX; x++) {
-            for (int y = 0; y < tilesY; y++) {
-                tiles.add(new Tile(this, x, y, true));
-            }
-        }
+        for (int x = 0; x < tilesX; x++)
+            for (int y = 0; y < tilesY; y++)
+                tiles.add(new Tile(this, x, y));
     }
 
     public void draw() {
-        background(255);
-        surface.setTitle("A-Maze-Ing, FPS: " + round(frameRate));
-        if (!DEBUG)
-            noStroke();
-        else stroke(0);
+        background(190);
+        surface.setTitle("Amazeing, FPS: " + round(frameRate));
         for (Tile t : tiles) {
             t.draw();
         }
@@ -52,6 +51,7 @@ public class Core extends PApplet {
 
     public void keyPressed() {
         if (key == 'g') {
+            setup();
             generateMaze();
         }
         if (key == 'd') {
@@ -59,28 +59,41 @@ public class Core extends PApplet {
         }
     }
 
-    public void mouseClicked() {
-        Tile clickedOn = getTile(floor(mouseX / Tile.WIDTH), floor(mouseY / Tile.WIDTH));
-        if (mouseButton == RIGHT) {
-            for (Tile t : clickedOn.getNeighbours()) {
-                t.setColor(color(255, 0, 0));
-                //System.out.println(t.toString());
-            }
+    private void removeWall(Tile a, Tile b) {
+        if (a.getX() < b.getX()) {
+            a.getEast().setExisting(false);
+        } else if (a.getX() > b.getX()) {
+            a.getWest().setExisting(false);
+        } else if (a.getY() < b.getY()) {
+            a.getSouth().setExisting(false);
+        } else if (a.getY() > b.getY()) {
+            a.getNorth().setExisting(false);
         }
-    }
+        }
+
 
     private void generateMaze() {
-
-        ArrayList<Tile> unvisitedTiles = new ArrayList<>(tiles);
-
-        //Pick a cell, mark it as part of the maze. Add the walls of the cell to the wall list.
-        while (!unvisitedTiles.isEmpty()) {
-            Tile startTile = unvisitedTiles.get((floor(random(0, unvisitedTiles.size() - 1))));
-            while (startTile != null) {
-                unvisitedTiles.remove(startTile);
-                startTile.setWall(false);
-                startTile = startTile.getNeighbours().stream().filter(unvisitedTiles::contains).findAny().orElse(null);
-            }
+        ArrayList<Tile> frontier = new ArrayList<>();
+        Tile tile = getRandomTile();
+        tile.setInMaze(true);
+        tile.setVisited();
+        tile.getNeighbours().stream().filter(Tile::isUnvisited).forEach(each -> {
+            frontier.add(each);
+            System.out.println("adding..");
+            each.setInMaze(true);
+        });
+        while (!frontier.isEmpty()) {
+            tile = frontier.get(floor(random(frontier.size())));
+            List<Tile> tempTiles = tile.getNeighbours().stream().filter(each -> !each.isUnvisited()).collect(Collectors.toList());
+            if (!tempTiles.isEmpty()) removeWall(tile, tempTiles.get(floor(random(tempTiles.size()))));
+            else continue;
+            tile.getNeighbours().stream().filter(Tile::isUnvisited).forEach(each -> {
+                frontier.add(each);
+                System.out.println("adding...");
+                each.setInMaze(true);
+            });
+            tile.setVisited();
+            frontier.remove(tile);
         }
     }
 }
