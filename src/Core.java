@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 
 public class Core extends PApplet {
 
+    private static boolean DEBUG = false;
+
     private ArrayList<Tile> tiles;
     private int tilesX = 15;
     private int tilesY = 15;
@@ -20,7 +22,7 @@ public class Core extends PApplet {
     }
 
     public void setup() {
-        frameRate(30);
+        frameRate(20);
         tiles = new ArrayList<>();
         for (int x = 0; x < tilesX; x++)
             for (int y = 0; y < tilesY; y++)
@@ -29,20 +31,8 @@ public class Core extends PApplet {
 
     public void draw() {
         background(190);
-        if (generate && !frontierCell.isEmpty()) {
-            Tile cF = frontierCell.get(floor(random(frontierCell.size())));
-            List<Tile> CIs = cF.getNeighbours().stream().filter(inCell::contains).collect(Collectors.toList());
-            Tile cI = CIs.get(floor(random(CIs.size())));
-            inCell.add(cF);
-            cF.getNeighbours().forEach(each -> {
-                if (!inCell.contains(each) && !frontierCell.contains(each))
-                    frontierCell.add(each);
-            });
-            removeWall(cF, cI);
-            frontierCell.remove(cF);
-        } else
-            generate = false;
-
+        if (DEBUG && generate)
+            generateCell();
         surface.setTitle("Amazeing, FPS: " + round(frameRate));
         for (Tile t : tiles)
             t.draw();
@@ -63,6 +53,8 @@ public class Core extends PApplet {
     public void keyPressed() {
         if (key == 'g')
             generateMaze();
+        else if (key == 'd')
+            DEBUG = !DEBUG;
     }
 
     private void removeWall(Tile a, Tile b) {
@@ -93,5 +85,25 @@ public class Core extends PApplet {
 
         generate = true;
 
+        while (!frontierCell.isEmpty() && !DEBUG) {
+            generateCell();
+        }
     }
+
+    private void generateCell() {
+        if (generate && !frontierCell.isEmpty()) {
+            Tile cF = frontierCell.get(floor(random(frontierCell.size())));
+            List<Tile> CIs = cF.getNeighbours().stream().filter(inCell::contains).collect(Collectors.toList());
+            Tile cI = CIs.get(floor(random(CIs.size())));
+            inCell.add(cF);
+            cF.getNeighbours().forEach(each -> {
+                if (!inCell.contains(each) && !frontierCell.contains(each))
+                    frontierCell.add(each);
+            });
+            removeWall(cF, cI);
+            frontierCell.remove(cF);
+        } else
+            generate = false;
+    }
+
 }
