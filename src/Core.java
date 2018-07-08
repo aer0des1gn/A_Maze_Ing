@@ -85,9 +85,11 @@ public class Core extends PApplet {
 
         generate = true;
 
+        long startTime = System.nanoTime();
         while (!frontierCell.isEmpty() && !DEBUG) {
             generateCell();
         }
+        System.out.println("Duration in milli sec: " + ((System.nanoTime() - startTime) / 100000D));
     }
 
     private void generateCell() {
