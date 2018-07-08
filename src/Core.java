@@ -52,7 +52,7 @@ public class Core extends PApplet {
         stroke(0);
         rect(0, 0, tilesX * WIDTH -1, tilesY * WIDTH-1);
 
-        stroke(255);
+        stroke(255, 0, 0);
 
         //entrance
         line(0, entrance * WIDTH, 0, (entrance + 1) * WIDTH);
