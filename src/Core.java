@@ -13,6 +13,9 @@ public class Core extends PApplet {
     private int tilesY = 15;
     public int WIDTH = 50;
 
+    private int entrance;
+    private int exit;
+
     public static void main(String[] args) {
         PApplet.main("Core", args);
     }
@@ -27,13 +30,14 @@ public class Core extends PApplet {
         for (int x = 0; x < tilesX; x++)
             for (int y = 0; y < tilesY; y++)
                 tiles.add(new Tile(this, x, y));
+        entrance = floor(random(tilesY - 1));
+        exit = floor(random(tilesY - 1));
     }
 
     public void draw() {
+
         background(190);
-        noFill();
-        stroke(0);
-        rect(0, 0, tilesX * WIDTH -1, tilesY * WIDTH-1);
+
         if (DEBUG && generate)
             generateCell();
         surface.setTitle("Amazeing, FPS: " + round(frameRate));
@@ -41,6 +45,20 @@ public class Core extends PApplet {
             t.draw();
         for (Tile t : tiles)
             t.drawWalls();
+
+        //frame
+
+        noFill();
+        stroke(0);
+        rect(0, 0, tilesX * WIDTH -1, tilesY * WIDTH-1);
+
+        stroke(255);
+
+        //entrance
+        line(0, entrance * WIDTH, 0, (entrance + 1) * WIDTH);
+
+        //exit
+        line(tilesX * WIDTH - 1, exit * WIDTH, tilesX * WIDTH - 1, (exit + 1) * WIDTH);
     }
 
     public Tile getTile(int x, int y) {
