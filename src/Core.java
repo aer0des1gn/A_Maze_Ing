@@ -20,7 +20,7 @@ public class Core extends PApplet {
     }
 
     public void setup() {
-        frameRate(20);
+        frameRate(30);
         tiles = new ArrayList<>();
         for (int x = 0; x < tilesX; x++)
             for (int y = 0; y < tilesY; y++)
@@ -66,16 +66,15 @@ public class Core extends PApplet {
     }
 
     private void removeWall(Tile a, Tile b) {
-        if (a.getX() < b.getX()) {
-            a.getEast().setExisting(false);
-        } else if (a.getX() > b.getX()) {
-            b.getEast().setExisting(false);
-        } else if (a.getY() < b.getY()) {
-            a.getSouth().setExisting(false);
-        } else if (a.getY() > b.getY()) {
-            b.getSouth().setExisting(false);
-        }
-        }
+        if (a.getX() < b.getX())
+            a.destroyEast();
+        else if (a.getX() > b.getX())
+            b.destroyEast();
+        else if (a.getY() < b.getY())
+            a.destroySouth();
+        else if (a.getY() > b.getY())
+            b.destroySouth();
+    }
 
     public ArrayList<Tile> inCell = new ArrayList<>();
     public ArrayList<Tile> frontierCell = new ArrayList<>();

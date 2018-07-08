@@ -8,8 +8,8 @@ public class Tile {
     private int x;
     private int y;
 
-    private Wall east;
-    private Wall south;
+    private boolean east = true;
+    private boolean south = true;
 
     Tile(Core core, int x, int y) {
         this.core = core;
@@ -30,10 +30,10 @@ public class Tile {
 
     public void drawWalls() {
         core.stroke(0);
-        if (getEast().isExisting()) {
+        if (east) {
             core.line((x + 1) * core.WIDTH, y * core.WIDTH, (x + 1) * core.WIDTH, (y + 1) * core.WIDTH);
         }
-        if (getSouth().isExisting()) {
+        if (south) {
             core.line(x * core.WIDTH, (y + 1) * core.WIDTH, (x + 1) * core.WIDTH, (y + 1) * core.WIDTH);
         }
     }
@@ -52,14 +52,6 @@ public class Tile {
         return tiles;
     }
 
-    public Wall getEast() {
-        return east == null ? (east = new Wall(this, core.getTile(x + 1, y))) : east;
-    }
-
-    public Wall getSouth() {
-        return south == null ? (south = new Wall(this, core.getTile(x, y + 1))) : south;
-    }
-
     public int getX() {
         return x;
     }
@@ -68,5 +60,12 @@ public class Tile {
         return y;
     }
 
+    public void destroySouth() {
+        this.south = false;
+    }
+
+    public void destroyEast() {
+        this.east = false;
+    }
 }
 
