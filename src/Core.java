@@ -31,6 +31,9 @@ public class Core extends PApplet {
 
     public void draw() {
         background(190);
+        noFill();
+        stroke(0);
+        rect(0, 0, tilesX * WIDTH -1, tilesY * WIDTH-1);
         if (DEBUG && generate)
             generateCell();
         surface.setTitle("Amazeing, FPS: " + round(frameRate));
