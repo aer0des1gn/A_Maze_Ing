@@ -1,5 +1,3 @@
-import processing.core.PConstants;
-
 import java.util.ArrayList;
 import java.util.Collections;
 
@@ -12,37 +10,31 @@ public class Tile {
 
     private Wall east;
     private Wall south;
-    private boolean visited;
-    private boolean inMaze;
 
     Tile(Core core, int x, int y) {
         this.core = core;
         this.x = x;
         this.y = y;
-
-        inMaze = false;
-        visited = false;
     }
 
     public void draw() {
-
-        core.stroke(0);
-        if (getEast().isExisting())
-            core.line((x + 1) * core.WIDTH, y * core.WIDTH, (x + 1) * core.WIDTH, (y - 1) * core.WIDTH);
-        if (getSouth().isExisting())
-            core.line(x * core.WIDTH, (y - 1) * core.WIDTH, (x + 1) * core.WIDTH, (y - 1) * core.WIDTH);
-
-        if (inMaze) {
+        if (core.frontierCell.contains(this) || core.inCell.contains(this)) {
             core.noStroke();
-            if (visited) core.fill(255);
-            else core.fill(255, 0, 0);
+            if (core.inCell.contains(this))
+                core.fill(255);
+            else
+                core.fill(255, 0, 0);
             core.rect(x * core.WIDTH, y * core.WIDTH, core.WIDTH, core.WIDTH);
         }
+    }
 
-        //farbe schrift
-        if (Core.DEBUG) {
-            core.textAlign(PConstants.LEFT, PConstants.TOP);
-            core.text(toString(), x * core.WIDTH, y * core.WIDTH);
+    public void drawWalls() {
+        core.stroke(0);
+        if (getEast().isExisting()) {
+            core.line((x + 1) * core.WIDTH, y * core.WIDTH, (x + 1) * core.WIDTH, (y + 1) * core.WIDTH);
+        }
+        if (getSouth().isExisting()) {
+            core.line(x * core.WIDTH, (y + 1) * core.WIDTH, (x + 1) * core.WIDTH, (y + 1) * core.WIDTH);
         }
     }
 
@@ -68,28 +60,6 @@ public class Tile {
         return south == null ? (south = new Wall(this, core.getTile(x, y + 1))) : south;
     }
 
-    public Wall getWest() {
-        Tile tile = core.getTile(x - 1, y);
-        if (tile != null)
-            return tile.getEast();
-        return null;
-    }
-
-    public Wall getNorth() {
-        Tile tile = core.getTile(x, y - 1);
-        if (tile != null)
-            return tile.getSouth();
-        return null;
-    }
-
-    public void setVisited() {
-        this.visited = true;
-    }
-
-    public boolean isUnvisited() {
-        return !visited;
-    }
-
     public int getX() {
         return x;
     }
@@ -98,8 +68,5 @@ public class Tile {
         return y;
     }
 
-    public void setInMaze(boolean inMaze) {
-        this.inMaze = inMaze;
-    }
 }
 

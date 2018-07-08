@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-
 public class Wall {
 
     private Tile a;
@@ -21,20 +19,7 @@ public class Wall {
 
     public void setExisting(boolean exists) {
         this.existing = exists;
-    }
-
-    public Tile getOpposite(Tile t) {
-        if (t == a) return b;
-        else if (t == b) return a;
-        else return null;
-    }
-
-    public ArrayList<Tile> getTiles() {
-        ArrayList<Tile> tiles = new ArrayList<>();
-        if(a != null)
-        tiles.add(a);
-        if(b != null)
-        tiles.add(b);
-        return tiles;
+        if (!exists)
+            System.out.println("Removing wall at " + a.toString() + " - " + b.toString());
     }
 }

@@ -6,21 +6,17 @@ import java.util.stream.Collectors;
 
 public class Core extends PApplet {
 
-    public static boolean DEBUG = false;
-
     private ArrayList<Tile> tiles;
-    private int tilesX = 10;
-    private int tilesY = 11;
-    public int WIDTH;
+    private int tilesX = 15;
+    private int tilesY = 15;
+    public int WIDTH = 50;
 
     public static void main(String[] args) {
         PApplet.main("Core", args);
     }
 
     public void settings() {
-        size(601, 601);
-        WIDTH = width / tilesX;
-        System.out.println(WIDTH);
+        size(tilesX * WIDTH, tilesY * WIDTH);
     }
 
     public void setup() {
@@ -33,10 +29,25 @@ public class Core extends PApplet {
 
     public void draw() {
         background(190);
+        if (generate && !frontierCell.isEmpty()) {
+            Tile cF = frontierCell.get(floor(random(frontierCell.size())));
+            List<Tile> CIs = cF.getNeighbours().stream().filter(inCell::contains).collect(Collectors.toList());
+            Tile cI = CIs.get(floor(random(CIs.size())));
+            inCell.add(cF);
+            cF.getNeighbours().forEach(each -> {
+                if (!inCell.contains(each) && !frontierCell.contains(each))
+                    frontierCell.add(each);
+            });
+            removeWall(cF, cI);
+            frontierCell.remove(cF);
+        } else
+            generate = false;
+
         surface.setTitle("Amazeing, FPS: " + round(frameRate));
-        for (Tile t : tiles) {
+        for (Tile t : tiles)
             t.draw();
-        }
+        for (Tile t : tiles)
+            t.drawWalls();
     }
 
     public Tile getTile(int x, int y) {
@@ -46,54 +57,42 @@ public class Core extends PApplet {
     }
 
     private Tile getRandomTile() {
-        return getTile(floor(random(0, tilesX)), floor(random(0, tilesY)));
+        return getTile(floor(random(tilesX)), floor(random(tilesY)));
     }
 
     public void keyPressed() {
-        if (key == 'g') {
-            setup();
+        if (key == 'g')
             generateMaze();
-        }
-        if (key == 'd') {
-            DEBUG = !DEBUG;
-        }
     }
 
     private void removeWall(Tile a, Tile b) {
         if (a.getX() < b.getX()) {
             a.getEast().setExisting(false);
         } else if (a.getX() > b.getX()) {
-            a.getWest().setExisting(false);
+            b.getEast().setExisting(false);
         } else if (a.getY() < b.getY()) {
             a.getSouth().setExisting(false);
         } else if (a.getY() > b.getY()) {
-            a.getNorth().setExisting(false);
+            b.getSouth().setExisting(false);
         }
         }
 
+    public ArrayList<Tile> inCell = new ArrayList<>();
+    public ArrayList<Tile> frontierCell = new ArrayList<>();
+
+    private boolean generate = false;
 
     private void generateMaze() {
-        ArrayList<Tile> frontier = new ArrayList<>();
-        Tile tile = getRandomTile();
-        tile.setInMaze(true);
-        tile.setVisited();
-        tile.getNeighbours().stream().filter(Tile::isUnvisited).forEach(each -> {
-            frontier.add(each);
-            System.out.println("adding..");
-            each.setInMaze(true);
-        });
-        while (!frontier.isEmpty()) {
-            tile = frontier.get(floor(random(frontier.size())));
-            List<Tile> tempTiles = tile.getNeighbours().stream().filter(each -> !each.isUnvisited()).collect(Collectors.toList());
-            if (!tempTiles.isEmpty()) removeWall(tile, tempTiles.get(floor(random(tempTiles.size()))));
-            else continue;
-            tile.getNeighbours().stream().filter(Tile::isUnvisited).forEach(each -> {
-                frontier.add(each);
-                System.out.println("adding...");
-                each.setInMaze(true);
-            });
-            tile.setVisited();
-            frontier.remove(tile);
-        }
+
+        setup();
+        inCell.clear();
+        frontierCell.clear();
+
+        Tile startTile = getRandomTile();
+        inCell.add(startTile);
+        frontierCell.addAll(startTile.getNeighbours());
+
+        generate = true;
+
     }
 }
