@@ -41,10 +41,8 @@ public class Core extends PApplet {
         if (DEBUG && generate)
             generateCell();
         surface.setTitle("Amazeing, FPS: " + round(frameRate));
-        for (Tile t : tiles)
-            t.draw();
-        for (Tile t : tiles)
-            t.drawWalls();
+        tiles.forEach(Tile::draw);
+        tiles.forEach(Tile::drawWalls);
 
         //frame
 
