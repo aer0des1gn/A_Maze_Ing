@@ -6,9 +6,8 @@ import AMazeING.Tile;
 import NeuroNetwork.InputNeuron;
 import NeuroNetwork.WorkingNeuron;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EvolutionClass {
 
@@ -25,11 +24,23 @@ public class EvolutionClass {
         findResetGenerate();
     }
 
+    private Tile getNTile(int direction, Tile current) {
+        switch (direction) {
+            case 0:
+                return !current.isNorth() ? current.getNorth() : null;
+            case 1:
+                return !current.isEast() ? current.getEast() : null;
+            case 2:
+                return !current.isSouth() ? current.getSouth() : null;
+            case 3:
+                return !current.isWest() ? current.getWest() : null;
+        }
+        return null;
+    }
+
     public void doStep() {
 
-        if (core.getActualMaze().getEntrance().getDistance() * 2 < step++) {
-            findResetGenerate();
-        }
+        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
 
         agents.forEach(agent -> {
 
@@ -59,7 +70,7 @@ public class EvolutionClass {
                 }
             }
 
-            int use = 1;
+            int use = 0;
 
             List<WorkingNeuron> outputNeurons = agent.getNeuronalNetwork().getOutputNeurons();
             for (int i = 0; i < outputNeurons.size(); i++) {
@@ -67,45 +78,34 @@ public class EvolutionClass {
                     use = i;
             }
 
-            Tile nTile = null;
-
-            switch (use) {
-                case 0:
-                    nTile = !agent.getCurrentPosition().isNorth() ? agent.getCurrentPosition().getNorth() : null;
-                    break;
-                case 1:
-                    nTile = !agent.getCurrentPosition().isEast() ? agent.getCurrentPosition().getEast() : null;
-                    break;
-                case 2:
-                    nTile = !agent.getCurrentPosition().isSouth() ? agent.getCurrentPosition().getSouth() : null;
-                    break;
-                case 3:
-                    nTile = !agent.getCurrentPosition().isWest() ? agent.getCurrentPosition().getWest() : null;
-                    break;
-            }
-
-            if (nTile != null)
+            Tile nTile = getNTile(use, agent.getCurrentPosition());
+            if (nTile != null) {
+                atomicBoolean.set(true);
                 agent.setCurrentPosition(nTile);
-
+                if (nTile.getDistance() == 0) {
+                    System.out.println("Finished!");
+                    System.out.println("Found perfect weights for this maze!");
+                    System.out.println("Within " + agent.getGeneration() + " generations");
+                    System.out.println(Arrays.toString(agent.getWeights()));
+                    core.getNextMaze();
+                }
+            }
         });
+
+        if (!atomicBoolean.get() || core.getActualMaze().getEntrance().getDistance() * 4 < step++) {
+            findResetGenerate();
+        }
 
     }
 
     private void generateNewGeneration(Maze maze) {
-        if (bestAgents.isEmpty()) {
-            int i = 0;
-            while (i++ < 50) {
-                Agent agent = new Agent(1);
-                agent.setCurrentPosition(maze.getEntrance());
-                agent.init();
-                agents.add(agent);
-            }
-        } else {
-            Iterator<Agent> iterator = bestAgents.iterator();
-            Agent agent = iterator.next();
+        Iterator<Agent> iterator = bestAgents.iterator();
+        Agent agent;
+        if (iterator.hasNext()) {
+            agent = iterator.next();
             int i = 0;
             while (true) {
-                if (i++ % 10 == 0) {
+                if (i++ % 5 == 0) {
                     Agent copy = new Agent(agent.getGeneration());
                     copy.setCurrentPosition(maze.getEntrance());
                     copy.init(agent.getWeights());
@@ -113,7 +113,7 @@ public class EvolutionClass {
                     if (iterator.hasNext()) {
                         agent = iterator.next();
                     } else
-                        return;
+                        break;
                 } else {
                     Agent temp = new Agent(agent.getGeneration() + 1);
                     temp.setCurrentPosition(maze.getEntrance());
@@ -122,27 +122,31 @@ public class EvolutionClass {
                 }
             }
         }
+        while (agents.size() < 30) {
+            agent = new Agent(1);
+            agent.setCurrentPosition(maze.getEntrance());
+            agent.init();
+            agents.add(agent);
+        }
     }
 
     private float[] changeWeights(float[] weights) {
-        for (int i = 0; i < weights.length / 20; i++)
-            weights[(int) core.random(weights.length)] += core.random(-.5f, .5f);
+        for (int i = 0; i < weights.length / 2; i++)
+            weights[(int) core.random(weights.length)] += core.random(-.1f, .1f);
         return weights;
     }
 
     private void findBestAgents() {
         bestAgents.clear();
         agents.stream()
-                .filter(agent -> agent.getCurrentPosition().getDistance() <= core.getActualMaze().getEntrance().getDistance() - 8)
-                .sorted((o1, o2) -> {
-                    int dist1 = o1.getCurrentPosition().getDistance();
-                    int dist2 = o2.getCurrentPosition().getDistance();
-                    return Integer.compare(dist1, dist2);
-                })
+                .filter(agent -> core.getActualMaze().minimalTilesToGo() - agent.getCurrentPosition().getDistance() > core.getActualMaze().minimalTilesToGo() / 4)
+                .sorted(Comparator.comparingInt(o -> o.getCurrentPosition().getDistance()))
                 .forEachOrdered(agent -> {
-                    if (bestAgents.size() < 5) {
-                        if (Core.debug)
+                    if (bestAgents.size() < 10) {
+                        if (Core.debug) {
                             System.out.println("#" + bestAgents.size() + ": " + agent.getCurrentPosition().getDistance());
+                            System.out.println(Arrays.toString(agent.getWeights()));
+                        }
                         bestAgents.add(agent);
                     }
                 });

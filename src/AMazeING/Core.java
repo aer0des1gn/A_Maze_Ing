@@ -18,7 +18,7 @@ public class Core extends PApplet {
     public static boolean debug = false;
     private static boolean changeFPS = false;
 
-    public static int tiles = 20;
+    public static int tiles = 10;
     public int WIDTH = 750 / tiles;
 
     public static void main(String[] args) {
@@ -53,10 +53,10 @@ public class Core extends PApplet {
 
         background(190);
 
+        surface.setTitle("A_MAZE_I_NG, FPS: " + round(frameRate));
+
         if (!drawMaze)
             return;
-
-        surface.setTitle("A_MAZE_I_NG, FPS: " + round(frameRate));
 
         actualMaze.getTiles().forEach(Tile::draw);
 
@@ -99,7 +99,7 @@ public class Core extends PApplet {
         }
 
         stroke(0, 0, 255);
-        
+
         evo.draw();
 
     }
@@ -115,12 +115,12 @@ public class Core extends PApplet {
             debug = !debug;
         if (key == 'f') {
             changeFPS = !changeFPS;
-            if (changeFPS) frameRate(10);
+            if (changeFPS) frameRate(6);
             else frameRate(1000);
         }
     }
 
-    private void getNextMaze() {
+    public void getNextMaze() {
         if (nextMaze >= mazes.size()) {
             nextMaze = 0;
             actualMaze = null;

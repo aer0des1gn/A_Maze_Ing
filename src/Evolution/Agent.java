@@ -36,8 +36,7 @@ public class Agent {
         return visited.contains(currentPosition);
     }
 
-    public void init() {
-
+    private void createLayers() {
         for (int i = 0; i < 4; i++) {
             nn.createNewOutput();
         }
@@ -47,6 +46,11 @@ public class Agent {
         for (int i = 0; i < 6; i++) {
             nn.createNewInput();
         }
+    }
+
+    public void init() {
+
+        createLayers();
 
         Random r = new Random();
         float[] weights = new float[nn.getOutputNeurons().size() * nn.getHiddenNeurons().size() + nn.getInputNeurons().size() * nn.getHiddenNeurons().size()];
@@ -57,15 +61,8 @@ public class Agent {
     }
 
     public void init(float[] weights) {
-        for (int i = 0; i < 4; i++) {
-            nn.createNewOutput();
-        }
 
-        nn.createHiddenNeurons(20);
-
-        for (int i = 0; i < 6; i++) {
-            nn.createNewInput();
-        }
+        createLayers();
 
         nn.createFullMesh(weights);
     }

@@ -20,6 +20,8 @@ public class Maze {
     private Tile entrance;
     private Tile exit;
 
+    private int minTiles;
+
     private ArrayList<Tile> inCell = new ArrayList<>();
     private ArrayList<Tile> frontierCell = new ArrayList<>();
 
@@ -39,8 +41,8 @@ public class Maze {
         for (int x = 0; x < Core.tiles; x++)
             for (int y = 0; y < Core.tiles; y++)
                 tiles.add(new Tile(this, x, y));
-        entrance = getTile(0, PApplet.floor(core.random(Core.tiles - 1)));
-        exit = getTile(Core.tiles - 1, PApplet.floor(core.random(Core.tiles - 1)));
+        entrance = getTile(0, 0);
+        exit = getTile(Core.tiles - 1, Core.tiles - 1);
         exit.setAsGoal();
 
         Tile startTile = getRandomTile();
@@ -60,7 +62,6 @@ public class Maze {
             removeWall(cF, cI);
             frontierCell.remove(cF);
         }
-
 
         if (core.isDraw()) System.out.println("Minimal tiles to go " + solve());
         else solve();
@@ -82,7 +83,7 @@ public class Maze {
             else if (o1.getDistance() < other.getDistance()) return -1;
             return 0;
         });
-        return entrance.getDistance();
+        return minTiles = entrance.getDistance();
     }
 
     private Tile getRandomTile() {
@@ -126,5 +127,9 @@ public class Maze {
 
     public ArrayList<Tile> getInCell() {
         return inCell;
+    }
+
+    public int minimalTilesToGo(){
+        return minTiles;
     }
 }
