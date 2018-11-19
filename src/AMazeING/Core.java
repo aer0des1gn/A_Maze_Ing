@@ -15,10 +15,11 @@ public class Core extends PApplet {
     private ArrayList<Maze> mazes = new ArrayList<>();
 
     private static boolean drawMaze = true;
-    public static boolean debug = false;
+    public static boolean debug = true;
     private static boolean changeFPS = false;
+    private boolean pause = false;
 
-    public static int tiles = 10;
+    public static int tiles = 25;
     public int WIDTH = 750 / tiles;
 
     public static void main(String[] args) {
@@ -40,6 +41,9 @@ public class Core extends PApplet {
     }
 
     public void draw() {
+
+        if (pause)
+            return;
 
         if (actualMaze == null) {
             getNextMaze();
@@ -113,6 +117,8 @@ public class Core extends PApplet {
             drawMaze = !drawMaze;
         if (key == 'd')
             debug = !debug;
+        if (key == ' ')
+            pause = !pause;
         if (key == 'f') {
             changeFPS = !changeFPS;
             if (changeFPS) frameRate(6);

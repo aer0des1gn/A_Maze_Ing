@@ -7,7 +7,8 @@ import NeuroNetwork.InputNeuron;
 import NeuroNetwork.WorkingNeuron;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class EvolutionClass {
 
@@ -18,6 +19,13 @@ public class EvolutionClass {
     private int step;
 
     private Core core;
+
+    //CONFIGURE
+
+    private int lastBestAgents = 1;
+    private int randomClones = 500;
+    private float changeWeightsPerWeight = .5f;
+    private int changeWeightsInProcent = 10;
 
     public EvolutionClass(Core core) {
         this.core = core;
@@ -40,9 +48,11 @@ public class EvolutionClass {
 
     public void doStep() {
 
-        AtomicBoolean atomicBoolean = new AtomicBoolean(false);
+        boolean finished = false;
+        for (Agent agent : agents) {
 
-        agents.forEach(agent -> {
+            if (finished)
+                break;
 
             for (int i = 0; i < agent.getNeuronalNetwork().getInputNeurons().size(); i++) {
 
@@ -65,64 +75,78 @@ public class EvolutionClass {
                         inputNeuron.setValue(agent.getCurrentPosition().getDistance());
                         break;
                     case 5:
-                        inputNeuron.setValue(agent.hasVisited() ? 1 : 0);
+                        inputNeuron.setValue(agent.visitedCount());
+                        break;
+                    case 6:
+                        inputNeuron.setValue(agent.getLastOutput());
+                        break;
+                    case 7:
+                        inputNeuron.setValue(agent.getPunish());
+                        break;
+                    //bias
+                    case 8:
+                        inputNeuron.setValue(-3f);
                         break;
                 }
             }
 
-            int use = 0;
 
             List<WorkingNeuron> outputNeurons = agent.getNeuronalNetwork().getOutputNeurons();
-            for (int i = 0; i < outputNeurons.size(); i++) {
-                if (outputNeurons.get(use).getValue() < outputNeurons.get(i).getValue())
-                    use = i;
+            agent.setLastOutput(outputNeurons.get(outputNeurons.size() - 1).getValue());
+
+            HashMap<Integer, Float> neuronFloatHashMap = new HashMap<>();
+
+            for (int i = 0; i < outputNeurons.size() - 1; i++) {
+                neuronFloatHashMap.put(i, outputNeurons.get(i).getValue());
             }
 
-            Tile nTile = getNTile(use, agent.getCurrentPosition());
-            if (nTile != null) {
-                atomicBoolean.set(true);
-                agent.setCurrentPosition(nTile);
-                if (nTile.getDistance() == 0) {
-                    System.out.println("Finished!");
-                    System.out.println("Found perfect weights for this maze!");
-                    System.out.println("Within " + agent.getGeneration() + " generations");
-                    System.out.println(Arrays.toString(agent.getWeights()));
-                    core.getNextMaze();
+            neuronFloatHashMap = neuronFloatHashMap.entrySet().stream()
+                    .sorted(Collections.reverseOrder(Map.Entry.comparingByValue()))
+                    .collect(Collectors.toMap(
+                            Map.Entry::getKey,
+                            Map.Entry::getValue, (e1, e2) -> e2, LinkedHashMap::new));
+
+            for (Integer i : neuronFloatHashMap.keySet()) {
+                Tile nTile = getNTile(i, agent.getCurrentPosition());
+                if (nTile != null) {
+                    agent.setCurrentPosition(nTile);
+                    agent.addPunish(Math.min(agent.visitedCount(), 10) * .1f);
+                    if (nTile.getDistance() == 0) {
+                        System.out.println("Finished!");
+                        System.out.println("Found perfect weights for this maze!");
+                        System.out.println("Within " + agent.getGeneration() + " generations");
+                        finished = true;
+                        core.getNextMaze();
+                    }
+                    break;
+                } else {
+                    agent.addPunish(0.15f);
                 }
             }
-        });
-
-        if (!atomicBoolean.get() || core.getActualMaze().getEntrance().getDistance() * 4 < step++) {
-            findResetGenerate();
         }
+        if (finished || core.getActualMaze().getEntrance().getDistance() * 2 < step++)
+            findResetGenerate();
 
     }
 
     private void generateNewGeneration(Maze maze) {
         Iterator<Agent> iterator = bestAgents.iterator();
         Agent agent;
-        if (iterator.hasNext()) {
+        while (iterator.hasNext()) {
             agent = iterator.next();
-            int i = 0;
-            while (true) {
-                if (i++ % 5 == 0) {
-                    Agent copy = new Agent(agent.getGeneration());
-                    copy.setCurrentPosition(maze.getEntrance());
-                    copy.init(agent.getWeights());
-                    agents.add(copy);
-                    if (iterator.hasNext()) {
-                        agent = iterator.next();
-                    } else
-                        break;
-                } else {
-                    Agent temp = new Agent(agent.getGeneration() + 1);
-                    temp.setCurrentPosition(maze.getEntrance());
-                    temp.init(changeWeights(agent.getWeights()));
-                    agents.add(temp);
-                }
+            int i = 1;
+            while (i++ % randomClones != 0) {
+                Agent temp = new Agent(agent.getGeneration() + 1);
+                temp.setCurrentPosition(maze.getEntrance());
+                temp.init(changeWeights(agent.getWeights()));
+                agents.add(temp);
             }
+            Agent copy = new Agent(agent.getGeneration());
+            copy.setCurrentPosition(maze.getEntrance());
+            copy.init(agent.getWeights());
+            agents.add(copy);
         }
-        while (agents.size() < 30) {
+        while (agents.size() < randomClones * lastBestAgents + 20) {
             agent = new Agent(1);
             agent.setCurrentPosition(maze.getEntrance());
             agent.init();
@@ -131,23 +155,23 @@ public class EvolutionClass {
     }
 
     private float[] changeWeights(float[] weights) {
-        for (int i = 0; i < weights.length / 2; i++)
-            weights[(int) core.random(weights.length)] += core.random(-.1f, .1f);
+        for (int i = 0; i < weights.length / 100 * changeWeightsInProcent; i++)
+            weights[(int) core.random(weights.length)] += core.random(-changeWeightsPerWeight, changeWeightsPerWeight);
         return weights;
     }
 
     private void findBestAgents() {
         bestAgents.clear();
         agents.stream()
-                .filter(agent -> core.getActualMaze().minimalTilesToGo() - agent.getCurrentPosition().getDistance() > core.getActualMaze().minimalTilesToGo() / 4)
-                .sorted(Comparator.comparingInt(o -> o.getCurrentPosition().getDistance()))
+                .sorted(Comparator.comparing(o -> o.getCurrentPosition().getDistance() + o.getPunish()))
                 .forEachOrdered(agent -> {
-                    if (bestAgents.size() < 10) {
-                        if (Core.debug) {
-                            System.out.println("#" + bestAgents.size() + ": " + agent.getCurrentPosition().getDistance());
-                            System.out.println(Arrays.toString(agent.getWeights()));
-                        }
+                    if (bestAgents.size() < lastBestAgents) {
                         bestAgents.add(agent);
+                        if (Core.debug) {
+                            System.out.println("dist: " + agent.getCurrentPosition().getDistance());
+                            System.out.println("punish: " + agent.getPunish());
+                            System.out.println("#" + bestAgents.size() + ": " + (agent.getCurrentPosition().getDistance() + agent.getPunish()));
+                        }
                     }
                 });
     }
@@ -160,11 +184,22 @@ public class EvolutionClass {
     }
 
     public void draw() {
-        agents.forEach(agent -> {
-            if (agent.getCurrentPosition() != null) {
-                core.rect(agent.getCurrentPosition().getX() * core.WIDTH + (core.WIDTH / 4),
-                        agent.getCurrentPosition().getY() * core.WIDTH + (core.WIDTH / 4), core.WIDTH / 2, core.WIDTH / 2);
-            }
-        });
+        AtomicInteger i = new AtomicInteger(1);
+        agents.stream()
+                .sorted((o1, o2) -> Integer.compare((int) (o2.getCurrentPosition().getDistance() + o2.getPunish()), (int) (o1.getCurrentPosition().getDistance() + o1.getPunish())))
+                .forEachOrdered(agent -> {
+                    if (agent.getCurrentPosition() != null) {
+                        core.stroke(220 - agents.size() + i.get(), 0, 255);
+                        if (i.get() == agents.size())
+                            core.fill(220, 0, 255);
+                        core.rect(
+                                agent.getCurrentPosition().getX() * core.WIDTH + (core.WIDTH / 4),
+                                agent.getCurrentPosition().getY() * core.WIDTH + (core.WIDTH / 4),
+                                core.WIDTH / 2,
+                                core.WIDTH / 2);
+                        i.getAndIncrement();
+                    }
+                });
+
     }
 }

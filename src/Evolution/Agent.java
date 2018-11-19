@@ -15,12 +15,33 @@ public class Agent {
     private Tile currentPosition;
     private int generation;
 
+    private float lastOutput;
+
+    private float punish = 0;
+
     private ArrayList<Tile> visited;
 
     Agent(int generation) {
         this.generation = generation;
         nn = new NeuronalNetwork();
         visited = new ArrayList<>();
+    }
+
+    public void addPunish(float punish) {
+        if (punish > 0)
+            this.punish += punish;
+    }
+
+    public float getPunish() {
+        return punish;
+    }
+
+    public float getLastOutput() {
+        return lastOutput;
+    }
+
+    public void setLastOutput(float lastOutput) {
+        this.lastOutput = lastOutput;
     }
 
     public Tile getCurrentPosition() {
@@ -32,18 +53,18 @@ public class Agent {
         this.currentPosition = currentPosition;
     }
 
-    public boolean hasVisited() {
-        return visited.contains(currentPosition);
+    public long visitedCount() {
+        return visited.stream().filter(tile -> currentPosition.equals(tile)).count();
     }
 
     private void createLayers() {
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 5; i++) {
             nn.createNewOutput();
         }
 
-        nn.createHiddenNeurons(20);
+        nn.createHiddenNeurons(10);
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 9; i++) {
             nn.createNewInput();
         }
     }
